@@ -6,7 +6,8 @@ from urllib.parse import urlsplit, urlunsplit
 EXCLUDED_SCHEMES = {"mailto", "tel", "javascript"}
 FILE_EXTENSIONS = (".pdf", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".zip")
 AUTH_SEGMENTS = {"login", "signin", "signup", "register", "account", "logout"}
-LANGUAGE_PREFIX = re.compile(r"^/(es|fr|de|ja|zh|it|pt|ru|ko|nl|pl|tr|ar)(-[a-z]{2})?(/|$)", re.I)
+# First segment only: 2 letters (hi, uk) optionally with a region or script (pt-br, zh-hant).
+LANGUAGE_PREFIX = re.compile(r"^/[a-z]{2}([-_][a-z]{2,4})?(/|$)", re.I)
 PAGINATION = re.compile(r"/page/\d+(/|$)")
 
 
@@ -25,6 +26,12 @@ def _host(url: str) -> str:
 def same_host(url: str, root: str) -> bool:
     # www. and the bare domain are the same site.
     return _host(url) == _host(root)
+
+
+def section_of(url: str) -> str:
+    """Section from the URL alone: the first path segment, or "home" for the root."""
+    segments = [s for s in urlsplit(url).path.split("/") if s]
+    return segments[0] if segments else "home"
 
 
 def is_excluded(url: str) -> bool:

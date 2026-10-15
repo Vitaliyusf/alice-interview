@@ -23,3 +23,10 @@ class Sitemap(BaseModel):
     site: str
     pages: list[Page]
     sections: dict[str, list[str]]
+
+    @classmethod
+    def build(cls, site: str, pages: list[Page]) -> "Sitemap":
+        sections: dict[str, list[str]] = {}
+        for page in pages:
+            sections.setdefault(page.section, []).append(page.url)
+        return cls(site=site, pages=pages, sections=sections)

@@ -37,6 +37,10 @@ def test_same_host_treats_www_as_same_site_and_subdomains_as_other():
         "https://example.com/es/about",
         "https://example.com/fr",
         "https://example.com/zh-cn/products",
+        "https://example.com/hi",
+        "https://example.com/uk/",
+        "https://example.com/zh-hant",
+        "https://example.com/pt-br/docs",
         "https://example.com/blog/tag/python",
         "https://example.com/blog/page/2",
     ],
@@ -52,6 +56,9 @@ def test_is_excluded_rejects_non_page_urls(url):
         "https://example.com/esports",
         "https://example.com/blog/page-layout",
         "https://example.com/pricing",
+        "https://example.com/learn",
+        "https://example.com/features",
+        "https://example.com/docs/es/intro",
     ],
 )
 def test_is_excluded_keeps_content_pages(url):

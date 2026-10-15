@@ -1,20 +1,25 @@
-"""Breadth-first crawl of one site with Playwright."""
+"""Page loading with Playwright, link candidates, and the deterministic BFS crawl (the agent's fallback)."""
 
 import asyncio
 import logging
 from collections import deque
-from urllib.parse import urljoin, urlsplit
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
+from urllib.parse import urljoin
 
 from playwright.async_api import Browser, async_playwright
 from playwright.async_api import Error as PlaywrightError
 
-from sitemap.links import is_excluded, normalize, same_host
-from sitemap.models import Link, Page, Sitemap
+from sitemap.links import is_excluded, normalize, same_host, section_of
+from sitemap.models import Link, Page, Region, Sitemap
 
 log = logging.getLogger(__name__)
 
 PAGE_TIMEOUT_MS = 15_000
 DELAY_S = 0.3
+
+# Loads one page and returns (title, links). Raises PlaywrightError when the page fails to load.
+Fetch = Callable[[str], Awaitable[tuple[str, list[Link]]]]
 
 # Region is the closest nav/header, footer or main ancestor of the anchor.
 EXTRACT_LINKS_JS = """
@@ -28,12 +33,7 @@ EXTRACT_LINKS_JS = """
 """
 
 
-def section_of(url: str) -> str:
-    segments = [s for s in urlsplit(url).path.split("/") if s]
-    return segments[0] if segments else "home"
-
-
-async def _fetch(browser: Browser, url: str) -> tuple[str, list[Link]]:
+async def load_page(browser: Browser, url: str) -> tuple[str, list[Link]]:
     page = await browser.new_page()
     try:
         await page.goto(url, timeout=PAGE_TIMEOUT_MS, wait_until="domcontentloaded")
@@ -44,36 +44,55 @@ async def _fetch(browser: Browser, url: str) -> tuple[str, list[Link]]:
         await page.close()
 
 
-async def crawl(root: str, max_pages: int = 30, max_depth: int = 2) -> Sitemap:
+@asynccontextmanager
+async def browser_fetch() -> AsyncIterator[Fetch]:
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch()
+        try:
+            yield lambda url: load_page(browser, url)
+        finally:
+            await browser.close()
+
+
+def candidates(page_url: str, links: list[Link], root: str, seen: set[str]) -> list[Link]:
+    """Unseen, same-host, non-excluded links with normalized URLs; the first occurrence of a URL wins."""
+    out: dict[str, Link] = {}
+    for link in links:
+        target = normalize(urljoin(page_url, link.url))
+        if target in seen or target in out or not same_host(target, root) or is_excluded(target):
+            continue
+        out[target] = link.model_copy(update={"url": target})
+    return list(out.values())
+
+
+async def crawl(
+    root: str,
+    fetch: Fetch,
+    regions: frozenset[Region] = frozenset({"nav", "main", "footer", "other"}),
+    max_pages: int = 30,
+    max_depth: int = 2,
+    delay_s: float = DELAY_S,
+) -> Sitemap:
+    """BFS that follows every candidate link in `regions`. Sections come from the URL path."""
     root = normalize(root)
     seen = {root}
     queue: deque[tuple[str, int, str | None]] = deque([(root, 0, None)])
     pages: list[Page] = []
 
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch()
+    while queue and len(pages) < max_pages:
+        url, depth, parent = queue.popleft()
         try:
-            while queue and len(pages) < max_pages:
-                url, depth, parent = queue.popleft()
-                try:
-                    title, links = await _fetch(browser, url)
-                except PlaywrightError as exc:  # includes timeouts; a broken page must not stop the crawl
-                    log.warning("skip %s: %s", url, type(exc).__name__)
-                    continue
-                pages.append(Page(url=url, title=title, depth=depth, parent=parent, section=section_of(url)))
+            title, links = await fetch(url)
+        except PlaywrightError as exc:  # includes timeouts; a broken page must not stop the crawl
+            log.warning("skip %s: %s", url, type(exc).__name__)
+            continue
+        pages.append(Page(url=url, title=title, depth=depth, parent=parent, section=section_of(url)))
 
-                if depth < max_depth:
-                    for link in links:
-                        target = normalize(urljoin(url, link.url))
-                        if target in seen or not same_host(target, root) or is_excluded(target):
-                            continue
-                        seen.add(target)
-                        queue.append((target, depth + 1, url))
-                await asyncio.sleep(DELAY_S)
-        finally:
-            await browser.close()
+        if depth < max_depth:
+            for link in candidates(url, links, root, seen):
+                if link.region in regions:
+                    seen.add(link.url)
+                    queue.append((link.url, depth + 1, url))
+        await asyncio.sleep(delay_s)
 
-    sections: dict[str, list[str]] = {}
-    for page in pages:
-        sections.setdefault(page.section, []).append(page.url)
-    return Sitemap(site=root, pages=pages, sections=sections)
+    return Sitemap.build(root, pages)
