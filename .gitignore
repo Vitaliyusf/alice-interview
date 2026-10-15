@@ -1,0 +1,14 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+.pytest-tmp/
+
+# agent kit
+.agent-private/
+CLAUDE.local.md
+.claude/settings.local.json
+.env.*
+!.env.example

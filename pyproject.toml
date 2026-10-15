@@ -1,0 +1,17 @@
+[project]
+name = "alice-interview"
+version = "0.1.0"
+description = "A minimal FastAPI service with one OpenAI call, ready to grow into an agent."
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+addopts = "-q --basetemp=.pytest-tmp"
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC"]
