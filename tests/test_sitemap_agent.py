@@ -3,8 +3,10 @@
 import asyncio
 import json
 
+import pytest
 from openai import APIConnectionError
 
+from sitemap import agent
 from sitemap.agent import build_sitemap
 from sitemap.crawl import crawl
 from sitemap.models import Link
@@ -30,8 +32,18 @@ async def fake_fetch(url):
     return f"title {url}", SITE[url]
 
 
-def run(fake_openai, max_pages=30):
+@pytest.fixture(autouse=True)
+def no_nudges(monkeypatch):
+    """Scripts below end with a plain answer; the nudge has its own test."""
+    monkeypatch.setattr(agent, "MAX_NUDGES", 0)
+
+
+def run_with_stats(fake_openai, max_pages=30):
     return asyncio.run(build_sitemap(ROOT, fake_openai, "m", fake_fetch, max_pages=max_pages, delay_s=0))
+
+
+def run(fake_openai, max_pages=30):
+    return run_with_stats(fake_openai, max_pages)[0]
 
 
 def tool_outputs(request):
@@ -115,10 +127,50 @@ def test_visit_of_an_unlisted_url_is_refused(fake_openai):
     }
 
 
+def test_visited_pages_are_kept_by_url_section_when_the_agent_never_adds(fake_openai):
+    fake_openai.will_call(("visit_page", {"url": ROOT}))
+    fake_openai.will_call(("visit_page", {"url": f"{ROOT}/learn"}))
+    fake_openai.will_say("done")
+
+    sitemap, stats = run_with_stats(fake_openai)
+
+    assert stats.path == "agent"
+    assert [(p.url, p.section) for p in sitemap.pages] == [(ROOT, "home"), (f"{ROOT}/learn", "learn")]
+
+
+def test_stats_count_turns_tool_calls_and_refusals(fake_openai):
+    fake_openai.will_call(("visit_page", {"url": ROOT}), ("visit_page", {"url": "https://evil.test/x"}))
+    fake_openai.will_call(("add_page", {"url": ROOT, "section": "home"}))
+    fake_openai.will_say("done")
+
+    _, stats = run_with_stats(fake_openai)
+
+    assert (stats.turns, stats.status) == (3, "done")
+    assert stats.tool_calls == {"visit_page": 2, "add_page": 1}
+    assert stats.refused == {"visit_page: outside the site": 1}
+
+
+def test_agent_that_stops_with_budget_and_links_left_is_nudged_to_continue(fake_openai, monkeypatch):
+    monkeypatch.setattr(agent, "MAX_NUDGES", 1)
+    fake_openai.will_call(("visit_page", {"url": ROOT}))
+    fake_openai.will_say("done")  # 3 links left unvisited: nudged
+    fake_openai.will_call(("visit_page", {"url": f"{ROOT}/learn"}))
+    fake_openai.will_say("done")  # nudge used up: the run ends
+
+    sitemap = run(fake_openai)
+
+    nudge = fake_openai.requests[2]["input"][-1]
+    assert nudge["role"] == "user"
+    assert nudge["content"].startswith("29 pages of budget are left and 3 listed links are not visited yet.")
+    assert [p.url for p in sitemap.pages] == [ROOT, f"{ROOT}/learn"]
+
+
 def test_api_error_falls_back_to_the_crawl_of_nav_and_main_links(fake_openai):
     fake_openai.will_raise(APIConnectionError(request=REQUEST))
 
-    sitemap = run(fake_openai)
+    sitemap, stats = run_with_stats(fake_openai)
+
+    assert stats.path == "fallback"
 
     assert [(p.url, p.depth, p.section) for p in sitemap.pages] == [
         (ROOT, 0, "home"),
