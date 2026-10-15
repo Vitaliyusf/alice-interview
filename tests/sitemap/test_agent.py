@@ -60,9 +60,14 @@ def test_agent_records_added_pages_with_depth_parent_and_section(fake_openai):
 
     assert [(p.url, p.depth, p.parent, p.section) for p in sitemap.pages] == [
         (ROOT, 0, None, "home"),
-        (f"{ROOT}/learn", 1, ROOT, "Learn"),
+        (f"{ROOT}/learn", 1, ROOT, "learn"),  # the model's "Learn", one key per section
+        (f"{ROOT}/reference", 1, ROOT, "reference"),  # by the top-up
     ]
-    assert sitemap.sections == {"home": [ROOT], "Learn": [f"{ROOT}/learn"]}
+    assert sitemap.sections == {
+        "home": [ROOT],
+        "learn": [f"{ROOT}/learn"],
+        "reference": [f"{ROOT}/reference"],
+    }
     root_visit = tool_outputs(fake_openai.requests[1])[0]
     assert [link["url"] for link in root_visit["links"]] == [
         f"{ROOT}/learn",
@@ -107,7 +112,7 @@ def test_add_page_of_an_unvisited_url_is_refused(fake_openai):
         "ok": False,
         "reason": "not visited: call visit_page first",
     }
-    assert [p.url for p in sitemap.pages] == [ROOT]
+    assert [p.url for p in sitemap.pages] == [ROOT, f"{ROOT}/learn", f"{ROOT}/reference"]  # top-up
 
 
 def test_visit_of_an_unlisted_url_is_refused(fake_openai):
@@ -130,7 +135,92 @@ def test_visited_pages_are_kept_by_url_section_when_the_agent_never_adds(fake_op
     sitemap, stats = run_with_stats(fake_openai)
 
     assert stats.path == "agent"
-    assert [(p.url, p.section) for p in sitemap.pages] == [(ROOT, "home"), (f"{ROOT}/learn", "learn")]
+    assert [(p.url, p.section) for p in sitemap.pages] == [
+        (ROOT, "home"),
+        (f"{ROOT}/learn", "learn"),
+        (f"{ROOT}/reference", "reference"),  # by the top-up
+    ]
+
+
+def test_visited_pages_the_model_did_not_add_are_kept_next_to_added_ones(fake_openai):
+    fake_openai.will_call(("visit_page", {"url": ROOT}))
+    fake_openai.will_call(("visit_page", {"url": f"{ROOT}/learn"}))
+    fake_openai.will_call(("add_page", {"url": ROOT, "section": "Start"}))
+    fake_openai.will_say("done")
+
+    sitemap = run(fake_openai, max_pages=2)  # budget used: nothing left for the top-up
+
+    assert [(p.url, p.section) for p in sitemap.pages] == [(ROOT, "start"), (f"{ROOT}/learn", "learn")]
+
+
+def test_model_section_and_url_section_that_differ_only_in_case_are_one_section(fake_openai):
+    fake_openai.will_call(("visit_page", {"url": ROOT}))
+    fake_openai.will_call(("visit_page", {"url": f"{ROOT}/learn"}))
+    fake_openai.will_call(("add_page", {"url": f"{ROOT}/learn", "section": "Learn"}))
+    fake_openai.will_call(("visit_page", {"url": f"{ROOT}/learn/basics"}))  # never added
+    fake_openai.will_say("done")
+
+    sitemap = run(fake_openai, max_pages=3)  # budget used: nothing left for the top-up
+
+    assert sitemap.sections == {"home": [ROOT], "learn": [f"{ROOT}/learn", f"{ROOT}/learn/basics"]}
+
+
+def test_top_up_visits_the_nav_and_main_links_the_model_left_except_skipped_ones(fake_openai):
+    fake_openai.will_call(("visit_page", {"url": ROOT}))
+    fake_openai.will_call(
+        ("skip_pages", {"urls": [f"{ROOT}/learn"]}), ("add_page", {"url": ROOT, "section": "home"})
+    )
+    fake_openai.will_say("done")
+
+    sitemap, stats = run_with_stats(fake_openai)
+
+    # /learn was skipped, /privacy is a footer link, evil.test is another site: only /reference is left.
+    assert [(p.url, p.depth, p.parent, p.section) for p in sitemap.pages] == [
+        (ROOT, 0, None, "home"),
+        (f"{ROOT}/reference", 1, ROOT, "reference"),
+    ]
+    assert stats.top_up == 1
+    assert stats.tool_calls == {"visit_page": 1, "skip_pages": 1, "add_page": 1}  # not model calls
+
+
+def test_top_up_stops_at_the_page_budget(fake_openai):
+    fake_openai.will_call(("visit_page", {"url": ROOT}))
+    fake_openai.will_say("done")
+
+    sitemap, stats = run_with_stats(fake_openai, max_pages=2)
+
+    assert [p.url for p in sitemap.pages] == [ROOT, f"{ROOT}/learn"]
+    assert stats.top_up == 1
+
+
+async def banner_fetch(url):
+    # /guide comes before the nav links; /docs is first listed from a banner outside nav and main.
+    home = [
+        Link(url="/guide", text="Guide", region="main"),
+        Link(url="/docs", text="Docs", region="other"),
+        Link(url="/docs", text="Docs", region="nav"),
+    ]
+    return f"title {url}", home if url == ROOT else []
+
+
+def test_top_up_visits_top_level_links_first_whatever_region_listed_them(fake_openai):
+    fake_openai.will_call(("visit_page", {"url": ROOT}))
+    fake_openai.will_say("done")
+
+    sitemap, stats = run_with_stats(fake_openai, fetch=banner_fetch)
+
+    assert [p.url for p in sitemap.pages] == [ROOT, f"{ROOT}/docs", f"{ROOT}/guide"]
+    assert stats.top_up == 2
+
+
+def test_no_top_up_when_the_agent_run_fails(fake_openai):
+    fake_openai.will_call(("visit_page", {"url": ROOT}))
+    fake_openai.will_raise(APIConnectionError(request=REQUEST))
+
+    sitemap, stats = run_with_stats(fake_openai)
+
+    assert (stats.path, stats.top_up) == ("agent", None)
+    assert [p.url for p in sitemap.pages] == [ROOT]
 
 
 def test_stats_count_turns_tool_calls_and_refusals(fake_openai):
@@ -156,7 +246,7 @@ def test_agent_that_stops_with_budget_and_links_left_is_nudged_to_continue(fake_
     nudge = fake_openai.requests[2]["input"][-1]
     assert nudge["role"] == "user"
     assert nudge["content"].startswith("29 pages of budget are left and 3 listed links are not visited yet.")
-    assert [p.url for p in sitemap.pages] == [ROOT, f"{ROOT}/learn"]
+    assert [p.url for p in sitemap.pages] == [ROOT, f"{ROOT}/learn", f"{ROOT}/reference"]  # top-up
 
 
 def test_api_error_falls_back_to_the_crawl_of_nav_and_main_links(fake_openai):
@@ -254,4 +344,9 @@ def test_a_section_over_its_cap_refuses_visits_and_add_page(fake_openai):
         "section": "docs",
         "cap": 3,
     }
-    assert sitemap.sections == {"Docs": [f"{ROOT}/docs", f"{ROOT}/docs/a", f"{ROOT}/docs/b"]}
+    # Visited but not added (the root; /deploy, whose add was refused) are kept under their URL section.
+    assert sitemap.sections == {
+        "home": [ROOT],
+        "docs": [f"{ROOT}/docs", f"{ROOT}/docs/a", f"{ROOT}/docs/b"],
+        "deploy": [f"{ROOT}/deploy"],
+    }

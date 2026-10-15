@@ -1,4 +1,10 @@
-"""The model loop: the model decides what to visit and how to group it; the session does the rest."""
+"""The model loop: the model decides what to visit and how to group it; the session does the rest.
+
+Flow: service.build_sitemap calls run_agent under a timeout; each turn sends one Responses API request
+and passes the function calls to tools.run_tool.
+Design: a plain bounded loop in our code, no agent framework: every stop condition (no more calls, turn
+limit, nudge limit) is visible here, and an API error propagates so the service can pick the fallback.
+"""
 
 import json
 import logging
@@ -18,6 +24,7 @@ AgentStatus = Literal["done", "turn_limit"]
 async def run_agent(client: AsyncOpenAI, model: str, session: Session) -> AgentStatus:
     """Run tool-calling turns until the model stops. Raises OpenAIError: the caller picks the fallback."""
     limits = session.limits
+    # The whole conversation is resent each turn (previous_response_id is not used): the history is ours.
     items: list[Any] = [
         {
             "role": "user",
@@ -25,17 +32,21 @@ async def run_agent(client: AsyncOpenAI, model: str, session: Session) -> AgentS
         }
     ]
     nudges = 0
+    # max_turns is a safety net, not a plan: a normal run ends well before it, and it stops a model that
+    # loops on refused calls from spending tokens until the timeout.
     for turn in range(1, limits.max_turns + 1):
         session.stats.turns = turn
+        # Send: the instructions and tools go with every request.
         response = await client.responses.create(
             model=model, instructions=SYSTEM, input=items, tools=TOOL_SPECS
         )
         calls = [item for item in response.output if item.type == "function_call"]
         items += response.output
         if not calls:
+            # Nudge: the model stopped with budget and unvisited links left. max_nudges bounds it, so a
+            # model that really has nothing left to add is not pushed in a loop.
             pages_left = limits.max_pages - len(session.visited)
             pending = len(session.pending())
-            # Models tend to stop after a handful of pages; a bounded nudge spends the budget on content.
             if pages_left > 0 and pending and nudges < limits.max_nudges:
                 nudges += 1
                 log.info(
@@ -43,8 +54,10 @@ async def run_agent(client: AsyncOpenAI, model: str, session: Session) -> AgentS
                 )
                 items.append({"role": "user", "content": nudge(pages_left, pending)})
                 continue
+            # Stop: no tool calls and no reason (or no nudges left) to push on.
             log.info("agent finished turn=%d status=%s", turn, response.status)
             return "done"
+        # Run tools: in the order the model asked, each result paired with its call_id, as the API needs.
         for call in calls:
             result = await run_tool(session, call.name, call.arguments)
             items.append(

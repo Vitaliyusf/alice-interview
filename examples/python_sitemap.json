@@ -9,6 +9,13 @@
       "section": "home"
     },
     {
+      "url": "https://www.python.org/community",
+      "title": "Our Community | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "community"
+    },
+    {
       "url": "https://www.python.org/downloads",
       "title": "Download Python | Python.org",
       "depth": 1,
@@ -27,7 +34,7 @@
       "title": "Our Success Stories | Python.org",
       "depth": 1,
       "parent": "https://www.python.org",
-      "section": "success stories"
+      "section": "stories"
     },
     {
       "url": "https://www.python.org/blogs",
@@ -42,6 +49,41 @@
       "depth": 1,
       "parent": "https://www.python.org",
       "section": "events"
+    },
+    {
+      "url": "https://www.python.org/community/irc",
+      "title": "Internet Relay Chat | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "community"
+    },
+    {
+      "url": "https://www.python.org/community/diversity",
+      "title": "Diversity | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "community"
+    },
+    {
+      "url": "https://www.python.org/community/lists",
+      "title": "Mailing lists | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "community"
+    },
+    {
+      "url": "https://www.python.org/community/forums",
+      "title": "Forums | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "community"
+    },
+    {
+      "url": "https://www.python.org/community/workshops",
+      "title": "Conferences and Workshops | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "community"
     },
     {
       "url": "https://www.python.org/downloads/latest/python3.16",
@@ -65,34 +107,6 @@
       "section": "downloads"
     },
     {
-      "url": "https://www.python.org/doc/versions",
-      "title": "Python documentation by version | Python.org",
-      "depth": 2,
-      "parent": "https://www.python.org/doc",
-      "section": "docs"
-    },
-    {
-      "url": "https://www.python.org/success-stories/category/data-science",
-      "title": "Data Science | Our Success Stories | Python.org",
-      "depth": 2,
-      "parent": "https://www.python.org/success-stories",
-      "section": "success stories"
-    },
-    {
-      "url": "https://www.python.org/events/python-events",
-      "title": "Our Events | Python.org",
-      "depth": 1,
-      "parent": "https://www.python.org",
-      "section": "events"
-    },
-    {
-      "url": "https://www.python.org/events/python-user-group",
-      "title": "Our Events | Python.org",
-      "depth": 1,
-      "parent": "https://www.python.org",
-      "section": "events"
-    },
-    {
       "url": "https://www.python.org/downloads/latest/python3.13",
       "title": "Python Release Python 3.13.16 | Python.org",
       "depth": 2,
@@ -107,44 +121,108 @@
       "section": "downloads"
     },
     {
+      "url": "https://www.python.org/about/apps",
+      "title": "Applications for Python | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "about"
+    },
+    {
+      "url": "https://www.python.org/about/quotes",
+      "title": "Quotes about Python | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "about"
+    },
+    {
+      "url": "https://www.python.org/about/gettingstarted",
+      "title": "Python For Beginners | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "about"
+    },
+    {
+      "url": "https://www.python.org/about/help",
+      "title": "Help | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "about"
+    },
+    {
+      "url": "https://www.python.org/download/other",
+      "title": "Download Python for other platforms | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "download"
+    },
+    {
+      "url": "https://www.python.org/download/alternatives",
+      "title": "Alternative Python implementations | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "download"
+    },
+    {
       "url": "https://www.python.org/doc/av",
       "title": "Audio/Video Instructional Materials for Python | Python.org",
       "depth": 1,
       "parent": "https://www.python.org",
-      "section": "docs"
+      "section": "doc"
     },
     {
       "url": "https://www.python.org/doc/essays",
       "title": "Python Documentation Index | Python.org",
       "depth": 1,
       "parent": "https://www.python.org",
-      "section": "docs"
+      "section": "doc"
     },
     {
-      "url": "https://www.python.org/success-stories/category/software-development",
-      "title": "Software Development | Our Success Stories | Python.org",
+      "url": "https://www.python.org/psf/annual-report/2024",
+      "title": "2024 PSF Annual Impact Report | Python Software Foundation",
       "depth": 1,
       "parent": "https://www.python.org",
-      "section": "success stories"
+      "section": "psf"
     },
     {
-      "url": "https://www.python.org/events/python-events/past",
-      "title": "Our Events | Python.org",
+      "url": "https://www.python.org/psf/conduct",
+      "title": "Python Software Foundation Code of Conduct - Python Software Foundation Policies",
       "depth": 1,
       "parent": "https://www.python.org",
-      "section": "events"
+      "section": "psf"
     },
     {
-      "url": "https://www.python.org/events/python-user-group/past",
-      "title": "Our Events | Python.org",
+      "url": "https://www.python.org/psf/get-involved",
+      "title": "👋 Hey Community Members! | Python Software Foundation",
       "depth": 1,
       "parent": "https://www.python.org",
-      "section": "events"
+      "section": "psf"
+    },
+    {
+      "url": "https://www.python.org/psf/community-stories",
+      "title": "Community Stories | Python Software Foundation",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "psf"
+    },
+    {
+      "url": "https://www.python.org/success-stories/category/arts",
+      "title": "Arts | Our Success Stories | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "success-stories"
     }
   ],
   "sections": {
     "home": [
       "https://www.python.org"
+    ],
+    "community": [
+      "https://www.python.org/community",
+      "https://www.python.org/community/irc",
+      "https://www.python.org/community/diversity",
+      "https://www.python.org/community/lists",
+      "https://www.python.org/community/forums",
+      "https://www.python.org/community/workshops"
     ],
     "downloads": [
       "https://www.python.org/downloads",
@@ -155,25 +233,39 @@
       "https://www.python.org/downloads/latest/python3.12"
     ],
     "docs": [
-      "https://www.python.org/doc",
-      "https://www.python.org/doc/versions",
-      "https://www.python.org/doc/av",
-      "https://www.python.org/doc/essays"
+      "https://www.python.org/doc"
     ],
-    "success stories": [
-      "https://www.python.org/success-stories",
-      "https://www.python.org/success-stories/category/data-science",
-      "https://www.python.org/success-stories/category/software-development"
+    "stories": [
+      "https://www.python.org/success-stories"
     ],
     "news": [
       "https://www.python.org/blogs"
     ],
     "events": [
-      "https://www.python.org/events",
-      "https://www.python.org/events/python-events",
-      "https://www.python.org/events/python-user-group",
-      "https://www.python.org/events/python-events/past",
-      "https://www.python.org/events/python-user-group/past"
+      "https://www.python.org/events"
+    ],
+    "about": [
+      "https://www.python.org/about/apps",
+      "https://www.python.org/about/quotes",
+      "https://www.python.org/about/gettingstarted",
+      "https://www.python.org/about/help"
+    ],
+    "download": [
+      "https://www.python.org/download/other",
+      "https://www.python.org/download/alternatives"
+    ],
+    "doc": [
+      "https://www.python.org/doc/av",
+      "https://www.python.org/doc/essays"
+    ],
+    "psf": [
+      "https://www.python.org/psf/annual-report/2024",
+      "https://www.python.org/psf/conduct",
+      "https://www.python.org/psf/get-involved",
+      "https://www.python.org/psf/community-stories"
+    ],
+    "success-stories": [
+      "https://www.python.org/success-stories/category/arts"
     ]
   }
 }

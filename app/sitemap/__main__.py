@@ -1,4 +1,10 @@
-"""Command line: build a sitemap, write it as UTF-8 JSON, verify the written file and print a summary."""
+"""Command line: build a sitemap, write it as UTF-8 JSON, verify the written file and print a summary.
+
+Flow: main parses the arguments into CrawlLimits, run opens the OpenAI client and the browser and calls
+service.build_sitemap, then main writes the file and runs verify on it.
+Design: the CLI owns every resource (one client, one browser) and closes them; the exit code is 1 when a
+check FAILs, so a script or CI can trust a zero exit.
+"""
 
 import argparse
 import asyncio
@@ -22,6 +28,7 @@ from app.sitemap.verify import Check, verify
 
 async def run(url: str, limits: CrawlLimits) -> tuple[Sitemap, RunStats, list[Link] | None]:
     """Build the sitemap and reload the home page; home links are None when that reload fails."""
+    # Settings are read here, not at import: a missing key fails the run, not the import.
     settings = get_settings()
     # The CLI is its own process: one client for the whole run, closed at the end.
     async with (
@@ -37,12 +44,15 @@ async def run(url: str, limits: CrawlLimits) -> tuple[Sitemap, RunStats, list[Li
         try:
             _, home_links = await fetch(normalize(url))
         except PlaywrightError:
+            # No home page, no coverage check: verify reports a WARN instead of guessing.
             home_links = None
         return sitemap, stats, home_links
 
 
 def summary(sitemap: Sitemap, stats: RunStats) -> list[str]:
     """Human-readable lines about the result and the run."""
+    # Enough to judge a run without opening the file: which path, how deep, which sections, and what
+    # the code refused the model.
     depths = Counter(p.depth for p in sitemap.pages)
     lines = [
         f"path: {stats.path} (agent status: {stats.status})",
@@ -54,24 +64,29 @@ def summary(sitemap: Sitemap, stats: RunStats) -> list[str]:
         "tool calls: " + (", ".join(f"{k}: {n}" for k, n in stats.tool_calls.items()) or "none"),
         "refused by the code:" + ("" if stats.refused else " none"),
         *(f"  {n} x {reason}" for reason, n in stats.refused.most_common()),
+        f"top-up visited: {'not run' if stats.top_up is None else stats.top_up}",
     ]
     return lines
 
 
 def main() -> None:
     """Parse the arguments, run, write the file and exit 1 when a check fails."""
+    # Defaults come from CrawlLimits, so the CLI and the library cannot disagree on them.
     parser = argparse.ArgumentParser(prog="python -m app.sitemap")
     parser.add_argument("url")
     parser.add_argument("--max-pages", type=int, default=CrawlLimits.max_pages)
     parser.add_argument("--max-depth", type=int, default=CrawlLimits.max_depth)
     parser.add_argument("--out", type=Path, default=Path("sitemap.json"))
     args = parser.parse_args()
+    # INFO shows the agent's progress; httpx would log every model request at INFO, so it is quieted.
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
     limits = CrawlLimits(max_pages=args.max_pages, max_depth=args.max_depth)
 
     sitemap, stats, home_links = asyncio.run(run(args.url, limits))
-    args.out.write_text(sitemap.model_dump_json(indent=2), encoding="utf-8")
+    # UTF-8 and "\n" whatever the OS: titles are not ASCII on many sites, and the file must be the same
+    # bytes on Windows and Linux. The trailing newline keeps pre-commit's end-of-file-fixer quiet.
+    args.out.write_text(sitemap.model_dump_json(indent=2) + "\n", encoding="utf-8", newline="\n")
     print(f"wrote {args.out}")
     print("\n".join(summary(sitemap, stats)))
 
