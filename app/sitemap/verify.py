@@ -1,6 +1,7 @@
 """Checks on a written sitemap file. FAIL means the sitemap is wrong; WARN means it may be incomplete.
 
-Flow: __main__ calls verify on the file text it just wrote, with the limits and a fresh load of the home page.
+Flow: __main__ calls verify on the file text it just wrote, with the limits and the home page links that
+extract recorded.
 Design: it checks the bytes on disk, not the object in memory, and reuses the crawler's own URL rules from
 links, so a FAIL is a real defect in the output and not a disagreement between two rule sets.
 """
@@ -39,7 +40,7 @@ def _check(name: str, bad: list[str], ok_reason: str) -> Check:
 
 
 def verify(raw: str, root: str, max_pages: int, max_depth: int, home_links: list[Link] | None) -> list[Check]:
-    """Check the file text against the limits and, when home_links is given, the live top menu."""
+    """Check the file text against the limits and, when home_links is given, the home page's top menu."""
     # Parses: the file is a valid Sitemap. Nothing else can be checked on a file that does not parse.
     try:
         sitemap = Sitemap.model_validate_json(raw)
@@ -91,9 +92,9 @@ def verify(raw: str, root: str, max_pages: int, max_depth: int, home_links: list
         _check("no excluded urls", [u for u in urls if is_excluded(u)], "none"),
     ]
 
-    # Coverage: the site's top menu, as the home page shows it now, against the pages in the file.
+    # Coverage: the top menu from the home page links the caller passes, against the pages in the file.
     if home_links is None:
-        checks.append(Check("coverage", "WARN", "home page could not be loaded"))
+        checks.append(Check("coverage", "WARN", "no home page links"))
     else:
         menu = top_menu(root, home_links)
         missing = [f"{text} ({url})" for url, text in menu.items() if url not in in_sitemap]

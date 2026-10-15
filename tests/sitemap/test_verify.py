@@ -79,5 +79,5 @@ def test_page_listed_under_another_section_fails():
     assert failed(statuses(GOOD, raw=sitemap.model_dump_json())) == {"sections"}
 
 
-def test_coverage_is_a_warning_when_home_page_did_not_load():
-    assert statuses(GOOD, home=None)["coverage"] == ("WARN", "home page could not be loaded")
+def test_coverage_is_a_warning_when_there_are_no_home_page_links():
+    assert statuses(GOOD, home=None)["coverage"] == ("WARN", "no home page links")

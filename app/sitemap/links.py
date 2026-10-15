@@ -1,6 +1,7 @@
-"""URL rules shared by the agent, the crawl and the checks: pure functions, no I/O.
+"""URL rules shared by extract, build and the checks: pure functions, no I/O.
 
-Flow: Session and crawl call these before any page load; verify calls the same ones on the written file.
+Flow: extract calls these before any page load; build uses section_of for pages the model did not place;
+verify calls the same rules on the written file.
 Design: one set of rules for producing and for checking the sitemap, so the checks cannot drift from the
 crawler. The exclusion rules are unit-tested on literal URLs.
 """
@@ -71,7 +72,7 @@ def is_excluded(url: str) -> bool:
 
 def top_menu(root: str, home_links: list[Link]) -> dict[str, str]:
     """Home page <nav> links to top-level paths (one segment) on the same site: url -> link text."""
-    # The site's own list of sections. Session uses it to go breadth first and verify to judge coverage.
+    # The site's own list of sections: verify judges coverage against it.
     menu: dict[str, str] = {}
     for link in home_links:
         url = normalize(urljoin(root, link.url))

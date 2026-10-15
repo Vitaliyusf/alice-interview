@@ -1,8 +1,9 @@
-"""The data shapes of a sitemap run: a scraped link, a recorded page and the sitemap file.
+"""The data shapes of a sitemap run: a scraped link, the extracted snapshot, and the sitemap file.
 
-Flow: crawl creates Links; Session and crawl create Pages; Sitemap is what __main__ writes and verify reads.
-Design: Pydantic models, so the file is validated when written and parsed and validated again by
-verify when read back.
+Flow: extract creates Links and the Snapshot; decide and build read the Snapshot; build creates Pages and
+the Sitemap that __main__ writes and verify reads.
+Design: Pydantic models, so both files (out/extracted.json and the sitemap) are validated when written
+and again when read back (replay, verify).
 """
 
 from typing import Literal
@@ -19,6 +20,28 @@ class Link(BaseModel):
     url: str
     text: str
     region: Region
+
+
+class ExtractedPage(BaseModel):
+    """A page as extract loaded it: what it shows and where the crawl found it."""
+
+    id: int
+    url: str
+    title: str
+    h1: str
+    depth: int
+    # The page that first linked to it; None for the root.
+    parent_id: int | None
+    # Same-site, non-excluded links, normalized, one per URL. Footer and other links are here too:
+    # recorded, not followed.
+    links: list[Link]
+
+
+class Snapshot(BaseModel):
+    """Everything extract saw: the input of decide and build, and the file a run can be replayed from."""
+
+    site: str
+    pages: list[ExtractedPage]
 
 
 class Page(BaseModel):

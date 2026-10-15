@@ -1,6 +1,7 @@
-"""Sitemap builder: an LLM agent picks the pages, the code fetches them and enforces every limit.
+"""Sitemap builder: Playwright extracts, the LLM decides the sections, the code builds and verifies.
 
-Flow: __main__ (CLI) -> service.build_sitemap -> agent.run_agent -> tools.run_tool -> Session -> crawl.
-Design: the model only decides what to visit and how to group it. It never fetches and never enforces a
-rule, so every limit holds whatever the model or the page text says.
+Flow: __main__ -> extract (bounded BFS, no model) -> decide (one model step over the snapshot)
+-> build (applies the decision under code rules) -> write -> verify.
+Design: the model never fetches and never enforces a rule. It answers by page id over a snapshot the code
+already crawled, so every limit holds whatever the model or the page text says.
 """

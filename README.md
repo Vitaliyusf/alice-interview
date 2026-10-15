@@ -1,14 +1,26 @@
 # Alice Interview: sitemap builder
 
-Builds a sitemap of a website's real content sections. An LLM agent on the OpenAI Responses API decides
-which pages to visit and how to group them into sections; the code loads every page with Playwright and
-enforces the limits (same site, depth, page budget, top sections first, and a per-section cap on the
-sections it can guess). The result is
-written as UTF-8 JSON and then checked as written. Every visited page is kept, and when the agent stops
-with budget left, the code visits the depth 1 nav and main links it neither visited nor skipped, through
-the same guards. If the agent fails before visiting any page, a
-deterministic breadth-first crawl of nav and main links produces the sitemap instead.
-A sample output is in [examples/fastapi_sitemap.json](examples/fastapi_sitemap.json).
+Builds a sitemap of a website's content sections in a pipeline with one model step:
+
+```
+main -> extract (Playwright, no LLM) -> decide (LLM) -> build (code) -> write -> verify
+```
+
+1. **extract** crawls the site breadth-first with Playwright: same host, normalized URLs, excluded URLs
+   skipped, each URL loaded once, within `--max-depth` and `--max-pages`, with a delay after each load.
+   It follows nav and main links only; footer and other links are recorded, not followed. It stores each
+   page's id, URL, title, h1, depth, parent id and links in `out/extracted.json`.
+2. **decide** sends the snapshot to the model as one line per page (`id | path | title | depth | parent_id`).
+   The model answers with strict Structured Outputs, by page id only:
+   `{"sections": [{"name": "downloads", "page_ids": [3, 7]}], "dropped": [{"id": 9, "reason": "login"}]}`.
+   It may call `get_page(id)` up to 10 times to see a page's h1 and links; that tool reads the snapshot,
+   never the network.
+3. **build** applies the answer under code rules: unknown ids are ignored, each page lands in exactly one
+   section (the first that names it), the root is `home`, and pages the model neither placed nor dropped
+   get their section from the URL. A model error, an invalid answer or a timeout means no answer: every
+   page then gets its section from the URL (path `fallback`), and the run goes on.
+4. The sitemap is written as UTF-8 JSON and **verify** checks the file as written. The exit code is 1
+   when a check FAILs.
 
 ## Setup
 
@@ -24,10 +36,51 @@ python -m app.check                # optional: one real call checks the key and 
 ## Run
 
 ```bash
-python -m app.sitemap https://fastapi.tiangolo.com --max-pages 30 --max-depth 2 --out sitemap.json
+python -m app.sitemap https://www.python.org --max-pages 30 --out examples/python_sitemap.json
 ```
 
-It prints a summary of the run and the checks on the written file, and exits 1 if a check fails.
+Output of that run (the result is in [examples/python_sitemap.json](examples/python_sitemap.json)):
+
+```
+wrote out\extracted.json
+wrote examples\python_sitemap.json
+checks:
+  PASS parses: 30 pages
+  PASS same site: all on www.python.org
+  PASS no duplicates: every url once
+  PASS depth: all <= 2
+  PASS page count: <= 30
+  PASS parents: every non-root page has its parent in the sitemap
+  PASS sections: every page in exactly one section, matching its own
+  PASS no excluded urls: none
+  WARN coverage: 6/10 top menu items; missing: Success Stories (https://www.python.org/success-stories), News (https://www.python.org/blogs), Events (https://www.python.org/events), >_
+                        Launch Interactive Shell (https://www.python.org/shell)
+path: llm
+pages extracted: 30
+pages kept: 30
+dropped: 0
+sections:
+  home: 1
+  foundation: 3
+  jobs: 1
+  community: 7
+  about: 5
+  downloads: 9
+  docs: 4
+llm_calls: 1
+tool_calls: 0
+tokens: 1144
+```
+
+The coverage WARN is the crawl, not the model: python.org's header menus put about 60 depth 1 links on
+the home page, and breadth-first in page order fills the 30-page budget before it reaches the last menu
+items.
+
+To re-run decide and build on a saved crawl without opening a browser:
+
+```bash
+python -m app.sitemap https://www.python.org --replay out/extracted.json --out sitemap.json
+```
 
 ## Test
 
@@ -35,7 +88,7 @@ It prints a summary of the run and the checks on the written file, and exits 1 i
 python -m pytest -q
 ```
 
-No key, browser or network needed: the model and the site are faked.
+No key, browser or network needed: the browser and the model are faked.
 
 ## Layout
 
@@ -43,14 +96,12 @@ No key, browser or network needed: the model and the site are faked.
 |---|---|
 | `app/config.py` | settings from `.env` and the environment |
 | `app/check.py` | one real model call to check the key and the model name |
-| `app/sitemap/__main__.py` | CLI: arguments, run, write the file, verify it, print the summary |
-| `app/sitemap/service.py` | `build_sitemap()`: the agent under a timeout, the top-up, the crawl as fallback |
-| `app/sitemap/agent.py` | the model loop and the nudges |
-| `app/sitemap/prompts.py` | the system prompt, the task message and the nudge text |
-| `app/sitemap/tools.py` | tool specs, argument models and dispatch |
-| `app/sitemap/session.py` | run state, the guardrails behind each tool, run stats |
+| `app/sitemap/__main__.py` | CLI: runs the pipeline, writes both files, verifies, prints the summary |
+| `app/sitemap/extract.py` | Playwright loader and the bounded breadth-first crawl |
+| `app/sitemap/decide.py` | the model step: snapshot lines, `get_page` tool, answer schema, fallback |
+| `app/sitemap/prompts.py` | the system prompt of the model step |
+| `app/sitemap/build.py` | applies the model's answer to the snapshot and produces the `Sitemap` |
 | `app/sitemap/limits.py` | `CrawlLimits`: every budget and cap, passed in |
-| `app/sitemap/crawl.py` | Playwright page loader and the deterministic BFS crawl |
 | `app/sitemap/links.py` | URL rules: normalize, same site, excluded, section from path |
-| `app/sitemap/models.py` | `Link`, `Page`, `Sitemap` |
+| `app/sitemap/models.py` | `Link`, `ExtractedPage`, `Snapshot`, `Page`, `Sitemap` |
 | `app/sitemap/verify.py` | checks on the written file |
