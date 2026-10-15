@@ -8,7 +8,8 @@ main -> extract (Playwright, no LLM) -> decide (LLM) -> build (code) -> write ->
 
 1. **extract** crawls the site breadth-first with Playwright: same host, normalized URLs, excluded URLs
    skipped, each URL loaded once, within `--max-depth` and `--max-pages`, with a delay after each load.
-   It follows nav and main links only; footer and other links are recorded, not followed. It stores each
+   It follows nav and main links only, the home page's top menu first; footer and other links are
+   recorded, not followed. It stores each
    page's id, URL, title, h1, depth, parent id and links in `out/extracted.json`.
 2. **decide** sends the snapshot to the model as one line per page (`id | path | title | depth | parent_id`).
    The model answers with strict Structured Outputs, by page id only:
@@ -17,8 +18,8 @@ main -> extract (Playwright, no LLM) -> decide (LLM) -> build (code) -> write ->
    never the network.
 3. **build** applies the answer under code rules: unknown ids are ignored, each page lands in exactly one
    section (the first that names it), the root is `home`, and pages the model neither placed nor dropped
-   get their section from the URL. A model error, an invalid answer or a timeout means no answer: every
-   page then gets its section from the URL (path `fallback`), and the run goes on.
+   get their section from the URL. A missing API key, a model error, an invalid answer or a timeout means
+   no answer: every page then gets its section from the URL (path `fallback`), and the run goes on.
 4. The sitemap is written as UTF-8 JSON and **verify** checks the file as written. The exit code is 1
    when a check FAILs.
 
@@ -53,28 +54,28 @@ checks:
   PASS parents: every non-root page has its parent in the sitemap
   PASS sections: every page in exactly one section, matching its own
   PASS no excluded urls: none
-  WARN coverage: 6/10 top menu items; missing: Success Stories (https://www.python.org/success-stories), News (https://www.python.org/blogs), Events (https://www.python.org/events), >_
-                        Launch Interactive Shell (https://www.python.org/shell)
+  PASS coverage: 10/10 top menu items
 path: llm
 pages extracted: 30
 pages kept: 30
 dropped: 0
 sections:
   home: 1
-  foundation: 3
+  organization: 4
   jobs: 1
-  community: 7
-  about: 5
+  community: 5
   downloads: 9
   docs: 4
+  events: 1
+  about: 4
+  help: 1
 llm_calls: 1
 tool_calls: 0
-tokens: 1144
+tokens: 1137
 ```
 
-The coverage WARN is the crawl, not the model: python.org's header menus put about 60 depth 1 links on
-the home page, and breadth-first in page order fills the 30-page budget before it reaches the last menu
-items.
+python.org's header menus put about 60 depth 1 links on the home page. extract therefore queues the home
+page's top-level menu items first, so all of them fit in the 30-page budget.
 
 To re-run decide and build on a saved crawl without opening a browser:
 

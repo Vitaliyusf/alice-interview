@@ -65,3 +65,8 @@ def test_is_excluded_rejects_non_page_urls(url):
 )
 def test_is_excluded_keeps_content_pages(url):
     assert not is_excluded(url)
+
+
+@pytest.mark.parametrize("ext", [".tar.xz", ".tgz", ".exe", ".pkg", ".msi", ".msix", ".dmg"])
+def test_is_excluded_skips_installers_and_archives(ext):
+    assert is_excluded(f"https://example.com/ftp/python/3.15.0/python-3.15.0{ext.upper()}")

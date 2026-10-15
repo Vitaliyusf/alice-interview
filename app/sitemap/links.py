@@ -14,7 +14,23 @@ from app.sitemap.models import Link
 # Not web pages: nothing to load.
 EXCLUDED_SCHEMES = {"mailto", "tel", "javascript"}
 # Downloads, not pages: loading them wastes budget and they have no links to follow.
-FILE_EXTENSIONS = (".pdf", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".zip")
+FILE_EXTENSIONS = (
+    ".pdf",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".svg",
+    ".zip",
+    # Installers and archives, as on a downloads page.
+    ".tar.xz",
+    ".tgz",
+    ".exe",
+    ".pkg",
+    ".msi",
+    ".msix",
+    ".dmg",
+)
 # Auth pages are not content, and some have side effects (logout).
 AUTH_SEGMENTS = {"login", "signin", "signup", "register", "account", "logout"}
 # Translated copies of the same pages: they would fill the budget with duplicates. Any 2-letter first

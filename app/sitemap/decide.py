@@ -5,8 +5,8 @@ into the Sitemap.
 Design: the model sees the snapshot as numbered lines and answers by page id through strict Structured
 Outputs. Its only tool, get_page, reads the in-memory snapshot, so the model cannot reach the network.
 A model error, an invalid or cut-off answer, or the timeout returns no Decision: build then uses the
-URL-based sections, so none of those failures aborts the run. A missing key fails loudly in __main__
-(configuration, not a model failure); the snapshot is already written, so --replay recovers.
+URL-based sections, so none of those failures aborts the run. __main__ takes the same fallback when
+there is no API key.
 """
 
 import asyncio

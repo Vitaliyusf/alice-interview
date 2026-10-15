@@ -119,3 +119,22 @@ def test_a_page_that_fails_to_load_is_skipped_and_not_counted():
 
     assert [p.url for p in snapshot.pages] == [ROOT, f"{ROOT}/reference"]
     assert [p.id for p in snapshot.pages] == [0, 1]
+
+
+def test_home_top_menu_is_crawled_before_dropdown_links():
+    # A header dropdown lists deep links before the top-level menu items, as on python.org.
+    site = {
+        ROOT: [
+            Link(url="/a/one", text="A one", region="nav"),
+            Link(url="/a/two", text="A two", region="nav"),
+            Link(url="/a", text="A", region="nav"),
+            Link(url="/b", text="B", region="nav"),
+        ],
+    }
+
+    async def fetch(url: str) -> Loaded:
+        return Loaded(url, "", site.get(url, []))
+
+    snapshot = asyncio.run(extract(ROOT, fetch, CrawlLimits(max_pages=3, delay_s=0)))
+
+    assert [p.url for p in snapshot.pages] == [ROOT, f"{ROOT}/a", f"{ROOT}/b"]

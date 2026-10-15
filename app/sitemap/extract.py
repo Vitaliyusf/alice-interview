@@ -20,7 +20,7 @@ from playwright.async_api import BrowserContext, async_playwright
 from playwright.async_api import Error as PlaywrightError
 
 from app.sitemap.limits import CrawlLimits
-from app.sitemap.links import is_excluded, normalize, same_host
+from app.sitemap.links import is_excluded, normalize, same_host, top_menu
 from app.sitemap.models import ExtractedPage, Link, Region, Snapshot
 
 log = logging.getLogger(__name__)
@@ -144,6 +144,11 @@ async def extract(root: str, fetch: Fetch, limits: CrawlLimits) -> Snapshot:
         )
         # Links are queued only below max depth; marking them seen on queueing keeps each URL queued once.
         if depth < limits.max_depth:
+            if page_id == 0:
+                # The home page's top menu goes to the front of the queue (stable sort, menu order kept):
+                # big header dropdowns would otherwise fill the budget before the last menu items.
+                menu = top_menu(root, links)
+                links = sorted(links, key=lambda link: link.url not in menu)
             for link in links:
                 if link.region in FOLLOWED and link.url not in seen:
                     seen.add(link.url)

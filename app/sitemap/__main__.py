@@ -15,7 +15,7 @@ from collections import Counter
 from pathlib import Path
 
 from openai import AsyncOpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app.config import get_settings
 from app.sitemap.build import build
@@ -34,9 +34,14 @@ async def extract_site(url: str, limits: CrawlLimits) -> Snapshot:
 
 
 async def decide_site(snapshot: Snapshot, limits: CrawlLimits) -> tuple[Decision | None, DecideStats]:
-    """Run decide with one OpenAI client, closed at the end."""
-    # Settings are read here, not at import: a missing key fails the run, not the import.
-    settings = get_settings()
+    """Run decide with one OpenAI client, closed at the end. No API key: the URL-section fallback."""
+    # Settings are read here, not at import. A missing or invalid key is a model failure like any other:
+    # the crawl is done, so the run still writes a sitemap from the URLs.
+    try:
+        settings = get_settings()
+    except ValidationError:
+        logging.getLogger(__name__).warning("no valid OpenAI settings: URL sections for every page")
+        return None, DecideStats(reason="no api key")
     async with AsyncOpenAI(
         api_key=settings.openai_api_key.get_secret_value(),
         timeout=settings.openai_timeout_s,

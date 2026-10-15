@@ -10,8 +10,8 @@ step replayed on the same input (`--replay`) without loading the site again.
 ## Where the LLM fits, and why there
 
 The model does one thing: it groups pages into named sections and says which pages are not content.
-That is judgment the code cannot make from URLs alone. On python.org, for example, the model named the
-`/psf` pages "foundation", and it put `/download/other` with `/downloads`.
+That is judgment the code cannot make from URLs alone. On python.org, for example, it put
+`/download/other` with `/downloads`, and `/success-stories` and `/blogs` with `/psf`.
 
 The model works on a snapshot the code has already crawled, shown as numbered lines
 (`id | path | title | depth | parent_id`). It answers by page id through strict Structured Outputs. Its one
@@ -24,11 +24,11 @@ quitting early. Moving the model after the crawl removed all of those.
 
 - **Crawl:** same host, normalized URLs, excluded URLs (auth, files, language copies, tags, paging),
   each URL loaded once, max depth, max pages, and a delay after each load. Only nav and main links are
-  followed.
+  followed, and the home page's top menu goes first in the queue.
 - **Build rules:** unknown ids are ignored, and each page is in exactly one section (first wins). The root
   is "home", and placing a page beats dropping it. Unplaced pages get their section from the URL, and a page
   whose parent was dropped hangs from its nearest kept ancestor.
-- **Fallback:** a model error, an invalid or cut-off answer, or a timeout gives URL-based sections for
+- **Fallback:** a missing API key, a model error, an invalid or cut-off answer, or a timeout gives URL-based sections for
   every page. The summary records which path ran (`llm` or `fallback`).
 
 ## How I verified
@@ -42,12 +42,13 @@ quitting early. Moving the model after the crawl removed all of those.
   has no duplicates, respects depth and page count, has every parent present, keeps sections consistent
   and contains no excluded URLs. It also checks coverage of the home page's top menu (a WARN, not a FAIL).
 - **Real run** on python.org with a 30-page budget: every check passed, path `llm`, 1 model call, 0 tool
-  calls. Coverage was a WARN at 6 of 10 top menu items.
+  calls, coverage 10 of 10 top menu items. Plain breadth-first had reached only 6 of 10: the header
+  dropdowns filled the budget first. Queueing the top menu first fixed that in code.
 
 ## What's next
 
-- **Crawl order.** Plain breadth-first spends python.org's budget on the header dropdown links. Queueing
-  top-level paths first would fix the 6/10 coverage without any model involvement.
+- **Grouping quality.** The sections are plausible, not exact. On the latest run `/about` went under
+  "organization" while `/shell` landed in "about", and `/about/help` got its own section.
 - **Use the drop reasons.** On this run the model dropped nothing. The prompt and the reason list could be
   tested on a site with real noise, such as a news site with legal pages and login walls.
 - **Evaluate grouping.** A small labeled set of sites, so prompt changes are measured, not eyeballed.
