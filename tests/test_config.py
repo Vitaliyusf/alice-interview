@@ -1,3 +1,5 @@
+"""Settings: where the key comes from, and that bad values fail at startup."""
+
 import pytest
 from pydantic import ValidationError
 

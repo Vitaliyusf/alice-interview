@@ -1,0 +1,179 @@
+{
+  "site": "https://www.python.org",
+  "pages": [
+    {
+      "url": "https://www.python.org",
+      "title": "Welcome to Python.org",
+      "depth": 0,
+      "parent": null,
+      "section": "home"
+    },
+    {
+      "url": "https://www.python.org/downloads",
+      "title": "Download Python | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "downloads"
+    },
+    {
+      "url": "https://www.python.org/doc",
+      "title": "Our Documentation | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "docs"
+    },
+    {
+      "url": "https://www.python.org/success-stories",
+      "title": "Our Success Stories | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "success stories"
+    },
+    {
+      "url": "https://www.python.org/blogs",
+      "title": "Our Blogs | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "news"
+    },
+    {
+      "url": "https://www.python.org/events",
+      "title": "Our Events | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "events"
+    },
+    {
+      "url": "https://www.python.org/downloads/latest/python3.16",
+      "title": "Python Release Python 3.16.0a1 | Python.org",
+      "depth": 2,
+      "parent": "https://www.python.org/downloads",
+      "section": "downloads"
+    },
+    {
+      "url": "https://www.python.org/downloads/latest/python3.15",
+      "title": "Python Release Python 3.15.0 | Python.org",
+      "depth": 2,
+      "parent": "https://www.python.org/downloads",
+      "section": "downloads"
+    },
+    {
+      "url": "https://www.python.org/downloads/latest/python3.14",
+      "title": "Python Release Python 3.14.8 | Python.org",
+      "depth": 2,
+      "parent": "https://www.python.org/downloads",
+      "section": "downloads"
+    },
+    {
+      "url": "https://www.python.org/doc/versions",
+      "title": "Python documentation by version | Python.org",
+      "depth": 2,
+      "parent": "https://www.python.org/doc",
+      "section": "docs"
+    },
+    {
+      "url": "https://www.python.org/success-stories/category/data-science",
+      "title": "Data Science | Our Success Stories | Python.org",
+      "depth": 2,
+      "parent": "https://www.python.org/success-stories",
+      "section": "success stories"
+    },
+    {
+      "url": "https://www.python.org/events/python-events",
+      "title": "Our Events | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "events"
+    },
+    {
+      "url": "https://www.python.org/events/python-user-group",
+      "title": "Our Events | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "events"
+    },
+    {
+      "url": "https://www.python.org/downloads/latest/python3.13",
+      "title": "Python Release Python 3.13.16 | Python.org",
+      "depth": 2,
+      "parent": "https://www.python.org/downloads",
+      "section": "downloads"
+    },
+    {
+      "url": "https://www.python.org/downloads/latest/python3.12",
+      "title": "Python Release Python 3.12.15 | Python.org",
+      "depth": 2,
+      "parent": "https://www.python.org/downloads",
+      "section": "downloads"
+    },
+    {
+      "url": "https://www.python.org/doc/av",
+      "title": "Audio/Video Instructional Materials for Python | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "docs"
+    },
+    {
+      "url": "https://www.python.org/doc/essays",
+      "title": "Python Documentation Index | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "docs"
+    },
+    {
+      "url": "https://www.python.org/success-stories/category/software-development",
+      "title": "Software Development | Our Success Stories | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "success stories"
+    },
+    {
+      "url": "https://www.python.org/events/python-events/past",
+      "title": "Our Events | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "events"
+    },
+    {
+      "url": "https://www.python.org/events/python-user-group/past",
+      "title": "Our Events | Python.org",
+      "depth": 1,
+      "parent": "https://www.python.org",
+      "section": "events"
+    }
+  ],
+  "sections": {
+    "home": [
+      "https://www.python.org"
+    ],
+    "downloads": [
+      "https://www.python.org/downloads",
+      "https://www.python.org/downloads/latest/python3.16",
+      "https://www.python.org/downloads/latest/python3.15",
+      "https://www.python.org/downloads/latest/python3.14",
+      "https://www.python.org/downloads/latest/python3.13",
+      "https://www.python.org/downloads/latest/python3.12"
+    ],
+    "docs": [
+      "https://www.python.org/doc",
+      "https://www.python.org/doc/versions",
+      "https://www.python.org/doc/av",
+      "https://www.python.org/doc/essays"
+    ],
+    "success stories": [
+      "https://www.python.org/success-stories",
+      "https://www.python.org/success-stories/category/data-science",
+      "https://www.python.org/success-stories/category/software-development"
+    ],
+    "news": [
+      "https://www.python.org/blogs"
+    ],
+    "events": [
+      "https://www.python.org/events",
+      "https://www.python.org/events/python-events",
+      "https://www.python.org/events/python-user-group",
+      "https://www.python.org/events/python-events/past",
+      "https://www.python.org/events/python-user-group/past"
+    ]
+  }
+}

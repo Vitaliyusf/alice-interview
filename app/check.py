@@ -1,4 +1,4 @@
-"""Check the key and the model with one call, before the server is involved:  python -m app.check"""
+"""Check the OpenAI key and the model with one real call, before a sitemap run: python -m app.check"""
 
 import asyncio
 import sys
@@ -10,6 +10,7 @@ from app.config import get_settings
 
 
 async def main() -> int:
+    """Return 0 when the key and the model answer, 1 with a printed hint otherwise."""
     try:
         settings = get_settings()
     except ValidationError:

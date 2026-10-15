@@ -1,18 +1,12 @@
-"""The app under test has its own Settings and a fake OpenAI client: no key, no network, no .env."""
+"""Shared test doubles: a fake OpenAI client and helpers for SDK errors. No key, no network."""
 
 import inspect
 import json
-from collections.abc import Iterator
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from fastapi.testclient import TestClient
 from openai.resources.responses import AsyncResponses
-
-from app.config import Settings
-from app.deps import get_client
-from app.main import create_app
 
 REQUEST = SimpleNamespace(method="POST", url="https://api.openai.com/v1/responses")
 
@@ -58,6 +52,7 @@ class FakeOpenAI:
         )
 
     def will_raise(self, error: Exception) -> None:
+        """The next call raises error."""
         self.replies.append(error)
 
     async def create(self, **request: Any) -> Any:
@@ -76,13 +71,5 @@ class FakeOpenAI:
 
 @pytest.fixture
 def fake_openai() -> FakeOpenAI:
+    """A fresh FakeOpenAI with no queued replies."""
     return FakeOpenAI()
-
-
-@pytest.fixture
-def client(fake_openai: FakeOpenAI) -> Iterator[TestClient]:
-    settings = Settings(openai_api_key="test-key", openai_model="test-model", _env_file=None)  # type: ignore[call-arg]
-    app = create_app(settings)
-    app.dependency_overrides[get_client] = lambda: fake_openai
-    with TestClient(app) as test_client:  # the `with` runs the lifespan: startup and shutdown
-        yield test_client

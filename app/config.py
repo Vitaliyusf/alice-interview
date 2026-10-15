@@ -13,6 +13,8 @@ ENV_FILE = (
 
 
 class Settings(BaseSettings):
+    """Typed settings; the OpenAI key is required, everything else has a default."""
+
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,
         env_file_encoding="utf-8-sig",  # also reads a file that Notepad saved with a BOM
@@ -41,4 +43,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """The settings, read once per process."""
     return Settings()  # type: ignore[call-arg]  # the values come from .env and the environment

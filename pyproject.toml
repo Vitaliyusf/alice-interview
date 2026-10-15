@@ -1,7 +1,7 @@
 [project]
 name = "alice-interview"
 version = "0.1.0"
-description = "A minimal FastAPI service with one OpenAI call, ready to grow into an agent."
+description = "Sitemap builder: an LLM agent on the OpenAI Responses API picks the pages, Playwright loads them."
 requires-python = ">=3.10"
 
 [tool.pytest.ini_options]

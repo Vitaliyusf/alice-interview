@@ -1,0 +1,77 @@
+{
+  "site": "https://fastapi.tiangolo.com",
+  "pages": [
+    {
+      "url": "https://fastapi.tiangolo.com",
+      "title": "FastAPI - FastAPI",
+      "depth": 0,
+      "parent": null,
+      "section": "home"
+    },
+    {
+      "url": "https://fastapi.tiangolo.com/tutorial",
+      "title": "Tutorial - User Guide - FastAPI",
+      "depth": 1,
+      "parent": "https://fastapi.tiangolo.com",
+      "section": "tutorial"
+    },
+    {
+      "url": "https://fastapi.tiangolo.com/advanced",
+      "title": "Advanced User Guide - FastAPI",
+      "depth": 1,
+      "parent": "https://fastapi.tiangolo.com",
+      "section": "advanced"
+    },
+    {
+      "url": "https://fastapi.tiangolo.com/how-to",
+      "title": "How To - Recipes - FastAPI",
+      "depth": 1,
+      "parent": "https://fastapi.tiangolo.com",
+      "section": "how-to"
+    },
+    {
+      "url": "https://fastapi.tiangolo.com/reference",
+      "title": "Reference - FastAPI",
+      "depth": 1,
+      "parent": "https://fastapi.tiangolo.com",
+      "section": "reference"
+    },
+    {
+      "url": "https://fastapi.tiangolo.com/learn",
+      "title": "Learn - FastAPI",
+      "depth": 1,
+      "parent": "https://fastapi.tiangolo.com",
+      "section": "learn"
+    },
+    {
+      "url": "https://fastapi.tiangolo.com/features",
+      "title": "Features - FastAPI",
+      "depth": 1,
+      "parent": "https://fastapi.tiangolo.com",
+      "section": "features"
+    }
+  ],
+  "sections": {
+    "home": [
+      "https://fastapi.tiangolo.com"
+    ],
+    "tutorial": [
+      "https://fastapi.tiangolo.com/tutorial"
+    ],
+    "advanced": [
+      "https://fastapi.tiangolo.com/advanced"
+    ],
+    "how-to": [
+      "https://fastapi.tiangolo.com/how-to"
+    ],
+    "reference": [
+      "https://fastapi.tiangolo.com/reference"
+    ],
+    "learn": [
+      "https://fastapi.tiangolo.com/learn"
+    ],
+    "features": [
+      "https://fastapi.tiangolo.com/features"
+    ]
+  }
+}

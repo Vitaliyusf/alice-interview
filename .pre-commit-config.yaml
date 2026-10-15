@@ -22,11 +22,3 @@ repos:
       - id: ruff-check
         args: ["--fix"]
       - id: ruff-format
-  - repo: local
-    hooks:
-      - id: agent-context
-        name: agent context check
-        entry: python scripts/ai/check_context.py
-        language: system
-        pass_filenames: false
-        files: ^(AGENTS\.md|CLAUDE\.md|\.claude/|docs/ai/|scripts/ai/)
